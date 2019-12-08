@@ -26,7 +26,11 @@ dependencies {
     implementation 'com.amazonaws:aws-android-sdk-cognito:2.2.+'
     implementation 'com.amazonaws:aws-android-sdk-s3:2.6.+'
     implementation 'com.amazonaws:aws-android-sdk-ddb:2.2.+'
-
+//BEGIN AWS DEPENDENCIES
+    def aws_version = "2.16.+"
+    implementation "com.amazonaws:aws-android-sdk-s3:$aws_version"
+    implementation ("com.amazonaws:aws-android-sdk-mobile-client:$aws_version") { transitive = true }
+//END AWS DEPENDENCIES
     //
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
