@@ -1,44 +1,25 @@
 package io.pronab.simpletransfer;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.CognitoCachingCredentialsProvider;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.internal.Constants;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.util.UUID;
+
+import static io.pronab.simpletransfer.LittTransferUtil.uploadtos3;
 
 public class MainActivity extends AppCompatActivity {
-/*class constants */
-// We only need one instance of the clients and credentials provider
-private static AmazonS3Client sS3Client;
-    private static CognitoCachingCredentialsProvider sCredProvider;
-    private static TransferUtility sTransferUtility;
-    AWSCredentialsProvider credentialsProvider;
+
+    Context littcontext ;
 
 /* end */
 
@@ -46,29 +27,92 @@ private static AmazonS3Client sS3Client;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-    /*    AmazonS3 s3Client = new AmazonS3Client(new BasicSessionCredentials(awsAccessKey, awsSecretKey, sessionToken));
-        s3Client.setRegion(Region.getRegion(Regions.US_WEST_2));
-        TransferUtility transferUtility = new TransferUtility(s3Client, context);
-        TransferObserver transferObserver = transferUtility.upload(bucketName, pathToStore, file, CannedAccessControlList.PublicRead);
- */
-        credentialsProvider = Util.getCredProvider(getApplicationContext());
 
+      //  Read a video , audio and picture file and store the locations
+      // costruct the Asuccess and AFailure call back in each case , finally invoke the
+      //upload
 
+        littcontext = getApplicationContext();
+        //TYpes are :video , audio, image, profile,
 
         AssetManager am = getAssets();
         InputStream inputStream = null;
+        File photofile, videofile, soundfile, docfile;
+
         try {
             inputStream = am.open("up.xml");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        File wf = createFileFromInputStream(inputStream);
-      if (wf  != null ) {
-     uploadtos3(this,   wf);}
-      else Toast.makeText(this,"No file",Toast.LENGTH_LONG);
+
+        docfile = createFileFromInputStream(inputStream);
+
+        try {
+            inputStream = am.open("up.mp3");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        soundfile = createFileFromInputStream(inputStream);
+
+
+        try {
+            inputStream = am.open("up.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        photofile = createFileFromInputStream(inputStream);
+
+        try {
+            inputStream = am.open("up.mp4");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        videofile = createFileFromInputStream(inputStream);
+
+// 1 . call backs from docfile
+         ASuccess docSuccess = new ASuccess() {
+             @Override
+             public void successExecute() {
+                 Toast.makeText(littcontext,"Doc File Success",Toast.LENGTH_LONG);
+             }
+         };
+        AFailure docFailure = new AFailure() {
+            @Override
+            public void failureExecute() {
+                Toast.makeText(littcontext,"Doc File Failed upload",Toast.LENGTH_LONG);
+            }
+
+        };
+        AError docError = new AError() {
+            @Override
+            public void errorExecute() {
+                Toast.makeText(littcontext,"Doc File error Occurred",Toast.LENGTH_LONG);
+            }
+
+        };
+
+
+
+        if (docfile  != null ) {
+         //   public static   void uploadtos3(final File file, String utype,
+          //          String uuid , final ASuccess asuccess,
+          //  AFailure afailure)
+
+
+            uploadtos3(   docfile,"provider",getUUID(),docSuccess,docFailure,docError); }
+        else
+            Toast.makeText(this,"No file",Toast.LENGTH_LONG);
     }
+
+
+//create file
+
+
         private File createFileFromInputStream(InputStream inputStream) {
-           /////
+
 
             File afile = new File("data/data/io.pronab.simpletransfer/test.txt");
 
@@ -84,8 +128,8 @@ private static AmazonS3Client sS3Client;
 
                     try {
                        fos = new FileOutputStream(afile);
-
-                        byte[] data = new byte[2048];
+                        final int SIZE_1GB = 1073741824;
+                        byte[] data = new byte[SIZE_1GB];
                         int nbread = 0;
 
 
@@ -115,50 +159,7 @@ private static AmazonS3Client sS3Client;
             return afile;
         }
 
-    public   void uploadtos3(final Context context, final File file) {
 
-        if(file !=null){
-
-
-
-            AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
-           // var s3Client = new AmazonS3Client(credentials,region);
-
-            TransferUtility transferUtility = new TransferUtility(s3, context);
-
-            final TransferObserver observer = transferUtility.upload(
-                    "litt-ap-southeast-2-dev",  //this is the bucket name on S3
-                    file.getName(),
-                    file,
-                    CannedAccessControlList.PublicRead //to make the file public
-            );
-            observer.setTransferListener(new TransferListener() {
-                @Override
-                public void onStateChanged(int id, TransferState state) {
-                    Log.d("S3tran0-1:", state.name()+":" + id);
-                    if (state.equals(TransferState.COMPLETED)) {
-                        Toast.makeText(context,"Success !! upload",Toast.LENGTH_LONG).show();
-                    } else if (state.equals(TransferState.FAILED)) {
-                        Toast.makeText(context,"Failed to upload",Toast.LENGTH_LONG).show();
-
-                    }
-
-                }
-
-                @Override
-                public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-
-                }
-
-                @Override
-                public void onError(int id, Exception ex) {
-                    Toast.makeText(context,"Failed " + ex.getMessage(),Toast.LENGTH_LONG).show();
-                    Log.d("S3tran0-3:",  ex.getMessage());
-
-                }
-            });
-        }
-    }
 
     public void startService(View view){
         Intent intent=new Intent(this,UploadService.class);
@@ -169,6 +170,8 @@ private static AmazonS3Client sS3Client;
         Intent intent=new Intent(this,UploadService.class);
         stopService(intent);
     }
+    public String  getUUID() {  return UUID.randomUUID().toString(); }
+
 
 }
 

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SimpleTransfer</string>
+    <string name="watch_upload">WATCH OUT UPLOAD</string>
 </resources>
