@@ -1,7 +1,6 @@
 package io.pronab.simpletransfer;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.view.View;
@@ -19,7 +18,6 @@ import java.io.InputStream;
 
 import static io.pronab.simpletransfer.LittTransferUtil.getURI;
 import static io.pronab.simpletransfer.LittTransferUtil.getUUID;
-import static io.pronab.simpletransfer.LittTransferUtil.uploadtos3;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -147,20 +145,7 @@ public class MainActivity extends AppCompatActivity {
         }) ;
 
 
-
-/
-
-
-        if (docfile  != null ) {
-         //   public static   void uploadtos3(final File file, String utype,
-          //          String uuid , final ASuccess asuccess,
-          //  AFailure afailure)
-
-
-            uploadtos3(   docfile,"provider", getUUID(),docSuccess,docFailure,docError); }
-        else
-            Toast.makeText(this,"No file",Toast.LENGTH_LONG);
-    }
+}
 
 
 //create file
@@ -213,18 +198,6 @@ public class MainActivity extends AppCompatActivity {
 
             return afile;
         }
-
-
-
-    public void startService(View view){
-        Intent intent=new Intent(this,UploadService.class);
-        startService(intent);
-    }
-
-    public void stopService(View view){
-        Intent intent=new Intent(this,UploadService.class);
-        stopService(intent);
-    }
 
 
 }
