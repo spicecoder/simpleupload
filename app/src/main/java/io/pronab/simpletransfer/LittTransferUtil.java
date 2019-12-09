@@ -29,6 +29,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 
 import java.io.File;
+import java.util.UUID;
 
 // The region in which identity pool exists
  // let identityRegion:AWSRegionType = .APSoutheast1
@@ -39,48 +40,51 @@ import java.io.File;
 
 public class LittTransferUtil {
     public static final String TAG = Util.class.getSimpleName();
-    String  identityPoolId = "ap-southeast-1:5ead1671-a36b-4089-a62a-071a03d6133d";
-    String regionDefault = "ap-southeast-2";
-    String regionAPSoutheast1 = "ap-southeast-1";
-    String  regionAPSoutheast2 = "ap-southeast-2";
-    String  regionUSWest1 = "us-west-1";
-    String jpgContentType = "image/jpg";
-    String  mp4ContentType = "video/mpeg4";
-
-    String  jpgExtension = ".jpg";
-    String mp4Extension = ".mp4";
-
-   String  profileFolder = "profile";
+    String identityPoolId = "ap-southeast-1:5ead1671-a36b-4089-a62a-071a03d6133d";
 
     public AmazonS3Client getsS3Client() {
         return sS3Client;
     }
 
-    String  imageFolder = "image";
-   String videoFolder = "video";
-    String  audioFolder = "audio";
+    String regionDefault = "ap-southeast-2";
+    String regionAPSoutheast1 = "ap-southeast-1";
+    String regionAPSoutheast2 = "ap-southeast-2";
+    String regionUSWest1 = "us-west-1";
+    String jpgContentType = "image/jpg";
+    String mp4ContentType = "video/mpeg4";
+
+    String jpgExtension = ".jpg";
+    String mp4Extension = ".mp4";
+
+    static String profileFolder = "profile";
+
+    static String filelocation;
+    static String imageFolder = "image";
+    static String videoFolder = "video";
+    static String audioFolder = "audio";
 
 
     private AmazonS3Client sS3Client;
     private AWSCredentialsProvider sMobileClient;
 
-    private static  Context context ;
-    private static String pubkey  ="722c709b-806e-4404-83ce-a3d70cd55574" ;
+    private static Context context;
+    private static String pubkey = "722c709b-806e-4404-83ce-a3d70cd55574";
 
-    static AWSCredentialsProvider   credentialsProvider = Util.getCredProvider(context.getApplicationContext());
+    static AWSCredentialsProvider credentialsProvider = Util.getCredProvider(context.getApplicationContext());
     //public LittTransferUtil(Context cc){     context  = cc ;}
 
-    public static void setContext(Context cr ) {context = cr; }
+    public static void setContext(Context cr) {
+        context = cr;
+    }
 
-  public static   void uploadtos3(final File file, String utype,
-                                  String uuid , final ASuccess asuccess,
-                                  AFailure afailure,AError aError)
-{
+    public static void uploadtos3(final File file, String utype,
+                                   final ASuccess asuccess,
+                                  AFailure afailure, AError aError) {
 
-        if(file !=null){
+        if (file != null) {
 
 
-             String filelocation  = pubkey + "/" + utype + "/"  +uuid ;
+
             AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
             // var s3Client = new AmazonS3Client(credentials,region);
 
@@ -95,12 +99,12 @@ public class LittTransferUtil {
             observer.setTransferListener(new TransferListener() {
                 @Override
                 public void onStateChanged(int id, TransferState state) {
-                    Log.d("S3tran0-1:", state.name()+":" + id);
+                    Log.d("S3tran0-1:", state.name() + ":" + id);
                     if (state.equals(TransferState.COMPLETED)) {
                         asuccess.successExecute();
-                        Toast.makeText(context,"Success -!! upload",Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "Success -!! upload", Toast.LENGTH_LONG).show();
                     } else if (state.equals(TransferState.FAILED)) {
-                        Toast.makeText(context,"Failed -- upload",Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "Failed -- upload", Toast.LENGTH_LONG).show();
 
                     }
 
@@ -113,16 +117,44 @@ public class LittTransferUtil {
 
                 @Override
                 public void onError(int id, Exception ex) {
-                    Toast.makeText(context,"Failed " + ex.getMessage(),Toast.LENGTH_LONG).show();
-                    Log.d("S3tran0-3:",  ex.getMessage());
+                    Toast.makeText(context, "Failed " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.d("S3tran0-3:", ex.getMessage());
 
                 }
             });
         }
     }
 
+    public static  String getUUID() {
+        return UUID.randomUUID().toString();
+    }
+
+    public static String getURI(String atype) {
+
+        String aguid = getUUID();
+        switch (atype) {
+            case "P": {
+                return (pubkey + "/" + profileFolder + "/" + aguid);
+
+            }
+
+            case "I": {
+                return (pubkey + "/" + imageFolder + "/" + aguid);
+
+            }
+            case "V": {
+                return (pubkey + "/" + videoFolder + "/" + aguid);
+
+            }
+            case "A": {
+                return (pubkey + "/" + audioFolder + "/" + aguid);
+
+            }
 
 
+        }
+        return "";
 
 
+    }
 }

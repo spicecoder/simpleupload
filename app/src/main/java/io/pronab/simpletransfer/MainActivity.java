@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,13 +16,25 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
+import static io.pronab.simpletransfer.LittTransferUtil.getURI;
+import static io.pronab.simpletransfer.LittTransferUtil.getUUID;
 import static io.pronab.simpletransfer.LittTransferUtil.uploadtos3;
 
 public class MainActivity extends AppCompatActivity {
 
     Context littcontext ;
+    Button btnUp;
+    Button btnDown;
+    Button gUUID;
+    EditText mtype;
+    TextView surl;
+    String  aguid ;
+    String  aURI ;
+    String  aType;
+    File imagefile, videofile, soundfile, profilefile;
+    InputStream inputStream = null;
+
 
 /* end */
 
@@ -27,17 +42,45 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-      //  Read a video , audio and picture file and store the locations
-      // costruct the Asuccess and AFailure call back in each case , finally invoke the
-      //upload
+        btnUp= (Button) findViewById(R.id.toS3);
+        btnDown= (Button) findViewById(R.id.fromS3);
+        gUUID = (Button) findViewById(R.id.genID);
+        mtype =(EditText) findViewById(R.id.Mtype); // P , I , V , A
+        surl = (TextView) findViewById(R.id.S3URL);
+//
+        //  Read a profile,  video , audio and image file and store the locations
+        // costruct the Asuccess and AFailure call back in each case , finally invoke the
+        //upload
 
         littcontext = getApplicationContext();
+        LittTransferUtil.filelocation ="" ;
+
+// 1 . call backs from docfile
+        final ASuccess docSuccess = new ASuccess() {
+            @Override
+            public void successExecute() {
+                Toast.makeText(littcontext,"Doc File Success",Toast.LENGTH_LONG);
+            }
+        };
+        final AFailure docFailure = new AFailure() {
+            @Override
+            public void failureExecute() {
+                Toast.makeText(littcontext,"Doc File Failed upload",Toast.LENGTH_LONG);
+            }
+
+        };
+        final AError docError = new AError() {
+            @Override
+            public void errorExecute() {
+                Toast.makeText(littcontext,"Doc File error Occurred",Toast.LENGTH_LONG);
+            }
+
+        };
         //TYpes are :video , audio, image, profile,
 
         AssetManager am = getAssets();
-        InputStream inputStream = null;
-        File photofile, videofile, soundfile, docfile;
+
+
 
         try {
             inputStream = am.open("up.xml");
@@ -45,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        docfile = createFileFromInputStream(inputStream);
+        profilefile = createFileFromInputStream(inputStream);
 
         try {
             inputStream = am.open("up.mp3");
@@ -62,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        photofile = createFileFromInputStream(inputStream);
+        imagefile = createFileFromInputStream(inputStream);
 
         try {
             inputStream = am.open("up.mp4");
@@ -72,28 +115,40 @@ public class MainActivity extends AppCompatActivity {
 
         videofile = createFileFromInputStream(inputStream);
 
-// 1 . call backs from docfile
-         ASuccess docSuccess = new ASuccess() {
-             @Override
-             public void successExecute() {
-                 Toast.makeText(littcontext,"Doc File Success",Toast.LENGTH_LONG);
-             }
-         };
-        AFailure docFailure = new AFailure() {
+
+
+
+
+
+
+        gUUID.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        aguid =  getUUID();
+                                        aType =  mtype.getText().toString();
+                                        aURI =   getURI(aType);
+                                        LittTransferUtil.filelocation = aURI;
+
+                                    }
+                                }) ;
+        btnUp.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void failureExecute() {
-                Toast.makeText(littcontext,"Doc File Failed upload",Toast.LENGTH_LONG);
-            }
+            public void onClick(View view) {
+                 if (aType.equalsIgnoreCase("P")) {
 
-        };
-        AError docError = new AError() {
+                LittTransferUtil.uploadtos3(profilefile,"P",docSuccess,docFailure,docError);
+            }
+        } });
+        btnDown.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void errorExecute() {
-                Toast.makeText(littcontext,"Doc File error Occurred",Toast.LENGTH_LONG);
+            public void onClick(View view) {
+
             }
+        }) ;
 
-        };
 
+
+/
 
 
         if (docfile  != null ) {
@@ -102,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
           //  AFailure afailure)
 
 
-            uploadtos3(   docfile,"provider",getUUID(),docSuccess,docFailure,docError); }
+            uploadtos3(   docfile,"provider", getUUID(),docSuccess,docFailure,docError); }
         else
             Toast.makeText(this,"No file",Toast.LENGTH_LONG);
     }
@@ -170,7 +225,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent=new Intent(this,UploadService.class);
         stopService(intent);
     }
-    public String  getUUID() {  return UUID.randomUUID().toString(); }
 
 
 }
